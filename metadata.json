@@ -1,0 +1,6 @@
+{
+  "name": "NEXORA AI",
+  "description": "Your Life. One Intelligence. Bilingual (Bangla & English) Personal AI Super App with Universal AI Search, Voice Assistant, Smart Life Manager, Health, Education, Finance (BDT), Document AI, Translator, Emergency & Safety, AI Vision, Shopping, Travel, Communication, Smart Home, Personal Memory, Agent Mode, and Family Space.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

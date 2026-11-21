@@ -1,0 +1,285 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User preferences, bilingual settings, plan tier, and budget configuration.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "language": { "type": "string", "enum": ["bn", "en"] },
+        "planTier": { "type": "string", "enum": ["FREE", "PLUS", "PRO", "FAMILY", "BUSINESS"] },
+        "monthlyBudgetBdt": { "type": "number" },
+        "offlineSmartMode": { "type": "boolean" },
+        "darkTheme": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "displayName", "language", "planTier", "monthlyBudgetBdt", "offlineSmartMode", "darkTheme", "createdAt", "updatedAt"]
+    },
+    "ConversationSummary": {
+      "title": "ConversationSummary",
+      "description": "Metadata for an AI chat or search conversation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "expertMode": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "messageCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "expertMode", "lastMessage", "messageCount", "createdAt", "updatedAt"]
+    },
+    "ChatMessageRecord": {
+      "title": "ChatMessageRecord",
+      "description": "Individual message inside an AI conversation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "expertMode": { "type": "string" },
+        "hasImage": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "role", "text", "expertMode", "hasImage", "createdAt"]
+    },
+    "LifeTask": {
+      "title": "LifeTask",
+      "description": "Smart Life Manager tasks, routines, events, and birthdays.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["TASK", "ROUTINE", "EVENT", "BIRTHDAY", "MEDICINE"] },
+        "priority": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "dueDateLabel": { "type": "string" },
+        "timeLabel": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "priority", "dueDateLabel", "timeLabel", "completed", "createdAt", "updatedAt"]
+    },
+    "FinanceTransaction": {
+      "title": "FinanceTransaction",
+      "description": "BDT income, expense, and bill records.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "txType": { "type": "string", "enum": ["INCOME", "EXPENSE", "BILL"] },
+        "category": { "type": "string" },
+        "dateLabel": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "amount", "txType", "category", "dateLabel", "createdAt", "updatedAt"]
+    },
+    "SavingsGoal": {
+      "title": "SavingsGoal",
+      "description": "Savings target in BDT.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "savedAmount": { "type": "number" },
+        "deadlineLabel": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "targetAmount", "savedAmount", "deadlineLabel", "createdAt", "updatedAt"]
+    },
+    "HealthRecord": {
+      "title": "HealthRecord",
+      "description": "Medicine reminder or health record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "recordType": { "type": "string", "enum": ["MEDICINE", "REPORT", "CHECKUP", "FIRST_AID"] },
+        "dosageOrValue": { "type": "string" },
+        "scheduleTime": { "type": "string" },
+        "takenToday": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "recordType", "dosageOrValue", "scheduleTime", "takenToday", "createdAt", "updatedAt"]
+    },
+    "PersonalMemory": {
+      "title": "PersonalMemory",
+      "description": "User-controlled AI Personal Memory and Digital Twin preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "memoryType": { "type": "string", "enum": ["PREFERENCE", "GOAL", "NOTE", "HABIT", "KNOWLEDGE"] },
+        "pinned": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content", "memoryType", "pinned", "createdAt", "updatedAt"]
+    },
+    "ShoppingItem": {
+      "title": "ShoppingItem",
+      "description": "AI Shopping Assistant list item.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "estimatedPriceBdt": { "type": "number" },
+        "category": { "type": "string" },
+        "purchased": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "estimatedPriceBdt", "category", "purchased", "createdAt", "updatedAt"]
+    },
+    "EmergencyContact": {
+      "title": "EmergencyContact",
+      "description": "Trusted emergency contact and blood donor entry.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "relation": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "bloodDonor": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "relation", "bloodGroup", "bloodDonor", "createdAt", "updatedAt"]
+    },
+    "SmartDevice": {
+      "title": "SmartDevice",
+      "description": "Smart Home controller device and automation rule.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "room": { "type": "string" },
+        "deviceType": { "type": "string", "enum": ["LIGHT", "AC", "FAN", "LOCK", "PLUG"] },
+        "powerOn": { "type": "boolean" },
+        "level": { "type": "integer" },
+        "automationRule": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "room", "deviceType", "powerOn", "level", "createdAt", "updatedAt"]
+    },
+    "SavedDocument": {
+      "title": "SavedDocument",
+      "description": "Saved Document AI summaries, CVs, meeting notes, study notes, and travel plans.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "docType": { "type": "string", "enum": ["SUMMARY", "CV", "MEETING", "STUDY_NOTE", "TRANSLATION", "TRAVEL_PLAN"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "docType", "content", "createdAt", "updatedAt"]
+    },
+    "FamilySpace": {
+      "title": "FamilySpace",
+      "description": "Shared family workspace metadata.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "inviteCode": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId", "inviteCode", "memberUids", "createdAt", "updatedAt"]
+    },
+    "FamilyItem": {
+      "title": "FamilyItem",
+      "description": "Shared family calendar event, shopping item, reminder, or emergency note.",
+      "type": "object",
+      "properties": {
+        "spaceId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "title": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["CALENDAR", "SHOPPING", "REMINDER", "EMERGENCY"] },
+        "completed": { "type": "boolean" },
+        "details": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["spaceId", "authorId", "memberUids", "title", "itemType", "completed", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile and app preferences."
+    },
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/ConversationSummary" },
+      "description": "User's AI chat conversation summaries."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessageRecord" },
+      "description": "Messages belonging to a user's AI conversation."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/LifeTask" },
+      "description": "User's tasks, routines, reminders, and birthdays."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/FinanceTransaction" },
+      "description": "User's BDT income, expense, and bill records."
+    },
+    "/users/{userId}/savings_goals/{goalId}": {
+      "schema": { "$ref": "#/entities/SavingsGoal" },
+      "description": "User's BDT savings goals."
+    },
+    "/users/{userId}/health_records/{recordId}": {
+      "schema": { "$ref": "#/entities/HealthRecord" },
+      "description": "User's medicine reminders and health records."
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/PersonalMemory" },
+      "description": "User's editable AI personal memories and digital twin notes."
+    },
+    "/users/{userId}/shopping_items/{itemId}": {
+      "schema": { "$ref": "#/entities/ShoppingItem" },
+      "description": "User's AI shopping list items."
+    },
+    "/users/{userId}/emergency_contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/EmergencyContact" },
+      "description": "User's emergency contacts and blood donor entries."
+    },
+    "/users/{userId}/smart_devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/SmartDevice" },
+      "description": "User's smart home devices and automation rules."
+    },
+    "/users/{userId}/saved_docs/{docId}": {
+      "schema": { "$ref": "#/entities/SavedDocument" },
+      "description": "User's saved Document AI outputs, CVs, study notes, and travel plans."
+    },
+    "/family_spaces/{spaceId}": {
+      "schema": { "$ref": "#/entities/FamilySpace" },
+      "description": "Shared family space metadata keyed by invite code."
+    },
+    "/family_spaces/{spaceId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/FamilyItem" },
+      "description": "Shared family calendar, shopping, reminder, and emergency items."
+    }
+  }
+}

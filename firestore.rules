@@ -1,0 +1,438 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTimestamp(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    // Entity validators
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             data.language in ['bn', 'en'] &&
+             data.planTier in ['FREE', 'PLUS', 'PRO', 'FAMILY', 'BUSINESS'] &&
+             data.monthlyBudgetBdt is number && data.monthlyBudgetBdt >= 0 && data.monthlyBudgetBdt <= 100000000 &&
+             data.offlineSmartMode is bool &&
+             data.darkTheme is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidConversation(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.expertMode is string && data.expertMode.size() >= 1 && data.expertMode.size() <= 60 &&
+             data.lastMessage is string && data.lastMessage.size() <= 500 &&
+             data.messageCount is int && data.messageCount >= 0 && data.messageCount <= 10000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChatMessage(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.role in ['user', 'model'] &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 30000 &&
+             data.expertMode is string && data.expertMode.size() >= 1 && data.expertMode.size() <= 60 &&
+             data.hasImage is bool &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidLifeTask(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.category in ['TASK', 'ROUTINE', 'EVENT', 'BIRTHDAY', 'MEDICINE'] &&
+             data.priority in ['HIGH', 'MEDIUM', 'LOW'] &&
+             data.dueDateLabel is string && data.dueDateLabel.size() <= 60 &&
+             data.timeLabel is string && data.timeLabel.size() <= 40 &&
+             data.completed is bool &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidTransaction(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.amount is number && data.amount > 0 && data.amount <= 100000000 &&
+             data.txType in ['INCOME', 'EXPENSE', 'BILL'] &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.dateLabel is string && data.dateLabel.size() >= 1 && data.dateLabel.size() <= 40 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSavingsGoal(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.targetAmount is number && data.targetAmount > 0 && data.targetAmount <= 100000000 &&
+             data.savedAmount is number && data.savedAmount >= 0 && data.savedAmount <= 100000000 &&
+             data.deadlineLabel is string && data.deadlineLabel.size() <= 60 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidHealthRecord(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.recordType in ['MEDICINE', 'REPORT', 'CHECKUP', 'FIRST_AID'] &&
+             data.dosageOrValue is string && data.dosageOrValue.size() <= 120 &&
+             data.scheduleTime is string && data.scheduleTime.size() <= 60 &&
+             data.takenToday is bool &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 5000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMemory(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 3000 &&
+             data.memoryType in ['PREFERENCE', 'GOAL', 'NOTE', 'HABIT', 'KNOWLEDGE'] &&
+             data.pinned is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidShoppingItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 160 &&
+             data.estimatedPriceBdt is number && data.estimatedPriceBdt >= 0 && data.estimatedPriceBdt <= 100000000 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.purchased is bool &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidEmergencyContact(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30 &&
+             data.relation is string && data.relation.size() <= 60 &&
+             data.bloodGroup is string && data.bloodGroup.size() <= 10 &&
+             data.bloodDonor is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSmartDevice(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.room is string && data.room.size() >= 1 && data.room.size() <= 60 &&
+             data.deviceType in ['LIGHT', 'AC', 'FAN', 'LOCK', 'PLUG'] &&
+             data.powerOn is bool &&
+             data.level is int && data.level >= 0 && data.level <= 100 &&
+             (!('automationRule' in data) || (data.automationRule is string && data.automationRule.size() <= 200)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSavedDocument(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.docType in ['SUMMARY', 'CV', 'MEETING', 'STUDY_NOTE', 'TRANSLATION', 'TRAVEL_PLAN'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 30000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidFamilySpace(data) {
+      return data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+             data.inviteCode is string && data.inviteCode.size() >= 4 && data.inviteCode.size() <= 20 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 10 &&
+             data.memberUids[0] is string &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidFamilyItem(data) {
+      return data.spaceId is string && isValidId(data.spaceId) &&
+             data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 10 &&
+             data.memberUids[0] is string &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.itemType in ['CALENDAR', 'SHOPPING', 'REMINDER', 'EMERGENCY'] &&
+             data.completed is bool &&
+             (!('details' in data) || (data.details is string && data.details.size() <= 1000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 1. User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'language', 'planTier', 'monthlyBudgetBdt', 'offlineSmartMode', 'darkTheme', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'language', 'planTier', 'monthlyBudgetBdt', 'offlineSmartMode', 'darkTheme', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+      allow update: if isOwner(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'language', 'planTier', 'monthlyBudgetBdt', 'offlineSmartMode', 'darkTheme', 'updatedAt']);
+      allow delete: if isOwner(userId);
+
+      // 2. Conversations & Messages
+      match /conversations/{conversationId} {
+        allow get: if isOwner(userId) && isValidId(conversationId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(conversationId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'expertMode', 'lastMessage', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'expertMode', 'lastMessage', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         isValidConversation(incoming());
+        allow update: if isOwner(userId) && isValidId(conversationId) &&
+                         isValidConversation(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'expertMode', 'lastMessage', 'messageCount', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(conversationId);
+
+        match /messages/{messageId} {
+          allow get: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+          allow list: if isOwner(userId) && isValidId(conversationId);
+          allow create: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId) &&
+                           incoming().userId == request.auth.uid &&
+                           incoming().keys().hasAll(['userId', 'role', 'text', 'expertMode', 'hasImage', 'createdAt']) &&
+                           incoming().keys().hasOnly(['userId', 'role', 'text', 'expertMode', 'hasImage', 'createdAt']) &&
+                           isValidChatMessage(incoming());
+          allow update: if false;
+          allow delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+        }
+      }
+
+      // 3. Smart Life Manager Tasks
+      match /tasks/{taskId} {
+        allow get: if isOwner(userId) && isValidId(taskId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(taskId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'category', 'priority', 'dueDateLabel', 'timeLabel', 'completed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'category', 'priority', 'dueDateLabel', 'timeLabel', 'completed', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidLifeTask(incoming());
+        allow update: if isOwner(userId) && isValidId(taskId) &&
+                         isValidLifeTask(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'priority', 'dueDateLabel', 'timeLabel', 'completed', 'notes', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(taskId);
+      }
+
+      // 4. Finance Transactions
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId) && isValidId(transactionId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(transactionId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'amount', 'txType', 'category', 'dateLabel', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'amount', 'txType', 'category', 'dateLabel', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidTransaction(incoming());
+        allow update: if isOwner(userId) && isValidId(transactionId) &&
+                         isValidTransaction(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'amount', 'txType', 'category', 'dateLabel', 'notes', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // 5. Savings Goals
+      match /savings_goals/{goalId} {
+        allow get: if isOwner(userId) && isValidId(goalId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(goalId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'targetAmount', 'savedAmount', 'deadlineLabel', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'targetAmount', 'savedAmount', 'deadlineLabel', 'createdAt', 'updatedAt']) &&
+                         isValidSavingsGoal(incoming());
+        allow update: if isOwner(userId) && isValidId(goalId) &&
+                         isValidSavingsGoal(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'targetAmount', 'savedAmount', 'deadlineLabel', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(goalId);
+      }
+
+      // 6. Health Records
+      match /health_records/{recordId} {
+        allow get: if isOwner(userId) && isValidId(recordId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(recordId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'recordType', 'dosageOrValue', 'scheduleTime', 'takenToday', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'recordType', 'dosageOrValue', 'scheduleTime', 'takenToday', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidHealthRecord(incoming());
+        allow update: if isOwner(userId) && isValidId(recordId) &&
+                         isValidHealthRecord(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'recordType', 'dosageOrValue', 'scheduleTime', 'takenToday', 'notes', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(recordId);
+      }
+
+      // 7. Personal Memories
+      match /memories/{memoryId} {
+        allow get: if isOwner(userId) && isValidId(memoryId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(memoryId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'content', 'memoryType', 'pinned', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'content', 'memoryType', 'pinned', 'createdAt', 'updatedAt']) &&
+                         isValidMemory(incoming());
+        allow update: if isOwner(userId) && isValidId(memoryId) &&
+                         isValidMemory(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'memoryType', 'pinned', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(memoryId);
+      }
+
+      // 8. Shopping Items
+      match /shopping_items/{itemId} {
+        allow get: if isOwner(userId) && isValidId(itemId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(itemId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'estimatedPriceBdt', 'category', 'purchased', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'estimatedPriceBdt', 'category', 'purchased', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidShoppingItem(incoming());
+        allow update: if isOwner(userId) && isValidId(itemId) &&
+                         isValidShoppingItem(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'estimatedPriceBdt', 'category', 'purchased', 'notes', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(itemId);
+      }
+
+      // 9. Emergency Contacts
+      match /emergency_contacts/{contactId} {
+        allow get: if isOwner(userId) && isValidId(contactId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(contactId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'phone', 'relation', 'bloodGroup', 'bloodDonor', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'phone', 'relation', 'bloodGroup', 'bloodDonor', 'createdAt', 'updatedAt']) &&
+                         isValidEmergencyContact(incoming());
+        allow update: if isOwner(userId) && isValidId(contactId) &&
+                         isValidEmergencyContact(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'relation', 'bloodGroup', 'bloodDonor', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(contactId);
+      }
+
+      // 10. Smart Devices
+      match /smart_devices/{deviceId} {
+        allow get: if isOwner(userId) && isValidId(deviceId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(deviceId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'room', 'deviceType', 'powerOn', 'level', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'room', 'deviceType', 'powerOn', 'level', 'automationRule', 'createdAt', 'updatedAt']) &&
+                         isValidSmartDevice(incoming());
+        allow update: if isOwner(userId) && isValidId(deviceId) &&
+                         isValidSmartDevice(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'room', 'deviceType', 'powerOn', 'level', 'automationRule', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(deviceId);
+      }
+
+      // 11. Saved Documents
+      match /saved_docs/{docId} {
+        allow get: if isOwner(userId) && isValidId(docId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(docId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'docType', 'content', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'docType', 'content', 'createdAt', 'updatedAt']) &&
+                         isValidSavedDocument(incoming());
+        allow update: if isOwner(userId) && isValidId(docId) &&
+                         isValidSavedDocument(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'docType', 'content', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+    }
+
+    // 12. Shared Family Spaces (inviteCode = spaceId)
+    match /family_spaces/{spaceId} {
+      allow get: if isSignedIn() && isValidId(spaceId) && (request.auth.uid in existing().memberUids);
+      allow list: if isSignedIn() && (request.auth.uid in existing().memberUids);
+      allow create: if isSignedIn() && isValidId(spaceId) &&
+                       incoming().ownerId == request.auth.uid &&
+                       (request.auth.uid in incoming().memberUids) &&
+                       incoming().keys().hasAll(['name', 'ownerId', 'inviteCode', 'memberUids', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['name', 'ownerId', 'inviteCode', 'memberUids', 'createdAt', 'updatedAt']) &&
+                       isValidFamilySpace(incoming());
+      allow update: if isSignedIn() && isValidId(spaceId) &&
+                       isValidFamilySpace(incoming()) &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().inviteCode == existing().inviteCode &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         (existing().ownerId == request.auth.uid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'memberUids', 'updatedAt'])) ||
+                         (!(request.auth.uid in existing().memberUids) &&
+                          (request.auth.uid in incoming().memberUids) &&
+                          incoming().memberUids.hasAll(existing().memberUids) &&
+                          incoming().memberUids.size() == existing().memberUids.size() + 1 &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+                       );
+      allow delete: if isSignedIn() && isValidId(spaceId) && existing().ownerId == request.auth.uid;
+
+      match /items/{itemId} {
+        allow get: if isSignedIn() && isValidId(spaceId) && isValidId(itemId) && (request.auth.uid in existing().memberUids);
+        allow list: if isSignedIn() && isValidId(spaceId) && (request.auth.uid in existing().memberUids);
+        allow create: if isSignedIn() && isValidId(spaceId) && isValidId(itemId) &&
+                         isValidFamilyItem(incoming()) &&
+                         incoming().spaceId == spaceId &&
+                         incoming().authorId == request.auth.uid &&
+                         (request.auth.uid in incoming().memberUids) &&
+                         incoming().keys().hasAll(['spaceId', 'authorId', 'memberUids', 'title', 'itemType', 'completed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['spaceId', 'authorId', 'memberUids', 'title', 'itemType', 'completed', 'details', 'createdAt', 'updatedAt']) &&
+                         exists(/databases/$(database)/documents/family_spaces/$(spaceId)) &&
+                         (request.auth.uid in get(/databases/$(database)/documents/family_spaces/$(spaceId)).data.memberUids);
+        allow update: if isSignedIn() && isValidId(spaceId) && isValidId(itemId) &&
+                         isValidFamilyItem(incoming()) &&
+                         (request.auth.uid in existing().memberUids) &&
+                         incoming().spaceId == existing().spaceId &&
+                         incoming().authorId == existing().authorId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'itemType', 'completed', 'details', 'updatedAt']);
+        allow delete: if isSignedIn() && isValidId(spaceId) && isValidId(itemId) && (request.auth.uid in existing().memberUids);
+      }
+    }
+  }
+}
