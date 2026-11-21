@@ -96,11 +96,11 @@ NEXORA AI is a bilingual (**বাংলা / English**) Android AI Super App bu
 
 ### 3. Build & Test
 ```bash
-# Build Debug APK
-./gradlew assembleDebug
+# Build Debug APK (uses Gradle 9.3.1)
+gradle :app:assembleDebug
 
-# Run JVM unit tests
-./gradlew testDebugUnitTest
+# Run JVM & Robolectric unit tests
+gradle :app:testDebugUnitTest
 
 # Run Firestore security rules tests (requires Firebase CLI & Node.js)
 firebase emulators:exec --only firestore "node --test firestore.test.js"

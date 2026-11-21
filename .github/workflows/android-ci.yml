@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -13,31 +14,57 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Restore debug keystore if needed
+      - name: Ensure Android SDK 36.1 & licenses
         run: |
-          if [ ! -f debug.keystore ] && [ -f debug.keystore.base64 ]; then
-            base64 -d debug.keystore.base64 > debug.keystore
+          SDK_MGR="$(command -v sdkmanager || true)"
+          if [ -z "$SDK_MGR" ]; then
+            SDK_DIR="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+            SDK_MGR=$(find "$SDK_DIR/cmdline-tools" -name sdkmanager -type f 2>/dev/null | head -n 1 || true)
+          fi
+          if [ -n "$SDK_MGR" ] && [ -x "$SDK_MGR" ]; then
+            yes | "$SDK_MGR" --licenses > /dev/null 2>&1 || true
+            "$SDK_MGR" "platforms;android-36.1" "build-tools;36.0.0" "platform-tools"
           fi
 
-      - name: Compile Debug Kotlin & Build APK
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+
+      - name: Prepare debug keystore
+        run: |
+          if [ ! -f debug.keystore ]; then
+            if [ -f debug.keystore.base64 ]; then
+              base64 -d debug.keystore.base64 > debug.keystore
+            else
+              keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+            fi
+          fi
+
+      - name: Build Debug APK
         run: gradle :app:assembleDebug --stacktrace
 
-      - name: Run Unit Tests
+      - name: Run Unit & Robolectric Tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-reports
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+
       - name: Upload Debug APK Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: nexora-ai-debug-apk
           path: app/build/outputs/apk/debug/*.apk
